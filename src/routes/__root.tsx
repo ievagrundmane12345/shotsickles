@@ -11,6 +11,13 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { CartProvider } from "@/lib/cart";
+import { Header } from "@/components/site/Header";
+import { Footer, AlcoholWarningBar } from "@/components/site/Footer";
+import { CookieBanner } from "@/components/site/CookieBanner";
+import { Chatbot } from "@/components/site/Chatbot";
+import { AgeGate } from "@/components/site/AgeGate";
+
 
 function NotFoundComponent() {
   return (
