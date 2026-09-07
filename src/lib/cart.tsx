@@ -64,8 +64,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
+const emptyCart: CartCtx = {
+  lines: [],
+  items: [],
+  count: 0,
+  subtotal: 0,
+  add: () => {},
+  setQty: () => {},
+  remove: () => {},
+  clear: () => {},
+};
+
 export function useCart() {
-  const ctx = useContext(Ctx);
-  if (!ctx) throw new Error("useCart must be used inside CartProvider");
-  return ctx;
+  return useContext(Ctx) ?? emptyCart;
 }
