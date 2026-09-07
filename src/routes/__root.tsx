@@ -1,3 +1,4 @@
+import NewsletterPopup from "../components/NewsletterPopup";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -144,6 +145,7 @@ function RootComponent() {
         <Chatbot />
         <AgeGate />
       </CartProvider>
+      <NewsletterPopup />
     </QueryClientProvider>
   );
 }
