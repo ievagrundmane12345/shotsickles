@@ -1,7 +1,7 @@
-import mojito from "@/assets/flavor-mojito.jpg";
-import pina from "@/assets/flavor-pina.jpg";
-import strawberry from "@/assets/flavor-strawberry.jpg";
-import mystery from "@/assets/mystery-box.jpg";
+const mojito = "/images/flavor-mojito.jpg";
+const pina = "/images/flavor-pina.jpg";
+const strawberry = "/images/flavor-strawberry.jpg";
+const mystery = "/images/mystery-box.jpg";
 
 export type Product = {
   slug: string;

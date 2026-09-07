@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import adGrid from "@/assets/up-15-58-50.jpeg.asset.json";
+const adGrid = { url: "/images/up-15-58-50.jpeg" };
 
 export const Route = createFileRoute("/story")({
   head: () => ({
