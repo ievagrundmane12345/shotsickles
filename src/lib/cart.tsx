@@ -14,8 +14,20 @@ type CartCtx = {
   clear: () => void;
 };
 
-const Ctx = createContext<CartCtx | null>(null);
 const KEY = "shotsickles-cart";
+
+const emptyCart: CartCtx = {
+  lines: [],
+  items: [],
+  count: 0,
+  subtotal: 0,
+  add: () => {},
+  setQty: () => {},
+  remove: () => {},
+  clear: () => {},
+};
+
+const Ctx = createContext<CartCtx>(emptyCart);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [lines, setLines] = useState<Line[]>([]);
@@ -38,9 +50,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [lines]);
 
   const value = useMemo<CartCtx>(() => {
-    const items = lines
-      .map((l) => ({ product: products.find((p) => p.slug === l.slug)!, qty: l.qty }))
-      .filter((i) => Boolean(i.product));
+    const items = lines.flatMap((line) => {
+      const product = products.find((candidate) => candidate.slug === line.slug);
+      return product ? [{ product, qty: line.qty }] : [];
+    });
     return {
       lines,
       items,
@@ -64,17 +77,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
-const emptyCart: CartCtx = {
-  lines: [],
-  items: [],
-  count: 0,
-  subtotal: 0,
-  add: () => {},
-  setQty: () => {},
-  remove: () => {},
-  clear: () => {},
-};
-
 export function useCart() {
-  return useContext(Ctx) ?? emptyCart;
+  return useContext(Ctx);
 }
