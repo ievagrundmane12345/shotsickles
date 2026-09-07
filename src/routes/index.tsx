@@ -2,9 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { products, eur } from "@/lib/products";
 import { ProductCard } from "@/components/site/ProductCard";
 import { Stars } from "@/components/site/Stars";
-import heroAd from "@/assets/up-15-56-50.jpeg.asset.json";
-import gridAd from "@/assets/up-16-00-49.jpeg.asset.json";
-import strawberryGuy from "@/assets/up-16-10-44.jpeg.asset.json";
+const heroAd = { url: "/images/up-15-56-50.jpeg" };
+const gridAd = { url: "/images/up-16-00-49.jpeg" };
+const strawberryGuy = { url: "/images/up-16-10-44.jpeg" };
 
 export const Route = createFileRoute("/")({
   head: () => ({

@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import board2026 from "@/assets/up-16-06-46.jpeg.asset.json";
-import board2025 from "@/assets/up-16-08-17.jpeg.asset.json";
-import talis from "@/assets/up-16-04-13.jpeg.asset.json";
-import summerSound from "@/assets/up-15-56-15.jpeg.asset.json";
+const board2026 = { url: "/images/up-16-06-46.jpeg" };
+const board2025 = { url: "/images/up-16-08-17.jpeg" };
+const talis = { url: "/images/up-16-04-13.jpeg" };
+const summerSound = { url: "/images/up-15-56-15.jpeg" };
 
 export const Route = createFileRoute("/partners")({
   head: () => ({
