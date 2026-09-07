@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useSyncExternalStore, type ReactNode } from "react";
 import { products, type Product } from "./products";
 
 type Line = { slug: string; qty: number };
@@ -16,67 +16,84 @@ type CartCtx = {
 
 const KEY = "shotsickles-cart";
 
-const emptyCart: CartCtx = {
-  lines: [],
-  items: [],
-  count: 0,
-  subtotal: 0,
-  add: () => {},
-  setQty: () => {},
-  remove: () => {},
-  clear: () => {},
-};
+let lines: Line[] = [];
+let hydrated = false;
+const listeners = new Set<() => void>();
 
-const Ctx = createContext<CartCtx>(emptyCart);
-
-export function CartProvider({ children }: { children: ReactNode }) {
-  const [lines, setLines] = useState<Line[]>([]);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (raw) setLines(JSON.parse(raw) as Line[]);
-    } catch {
-      /* ignore */
-    }
-  }, []);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(KEY, JSON.stringify(lines));
-    } catch {
-      /* ignore */
-    }
-  }, [lines]);
-
-  const value = useMemo<CartCtx>(() => {
-    const items = lines.flatMap((line) => {
-      const product = products.find((candidate) => candidate.slug === line.slug);
-      return product ? [{ product, qty: line.qty }] : [];
-    });
-    return {
-      lines,
-      items,
-      count: items.reduce((s, i) => s + i.qty, 0),
-      subtotal: items.reduce((s, i) => s + i.qty * i.product.price, 0),
-      add: (slug, qty = 1) =>
-        setLines((prev) => {
-          const found = prev.find((l) => l.slug === slug);
-          if (found) return prev.map((l) => (l.slug === slug ? { ...l, qty: l.qty + qty } : l));
-          return [...prev, { slug, qty }];
-        }),
-      setQty: (slug, qty) =>
-        setLines((prev) =>
-          qty <= 0 ? prev.filter((l) => l.slug !== slug) : prev.map((l) => (l.slug === slug ? { ...l, qty } : l)),
-        ),
-      remove: (slug) => setLines((prev) => prev.filter((l) => l.slug !== slug)),
-      clear: () => setLines([]),
-    };
-  }, [lines]);
-
-  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+function isLine(value: unknown): value is Line {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<Line>;
+  return typeof candidate.slug === "string" && typeof candidate.qty === "number" && candidate.qty > 0;
 }
 
-export function useCart() {
-  return useContext(Ctx);
+function updateLines(next: Line[] | ((current: Line[]) => Line[])) {
+  lines = typeof next === "function" ? next(lines) : next;
+  try {
+    localStorage.setItem(KEY, JSON.stringify(lines));
+  } catch {
+    // Storage can be unavailable during server rendering or in private browsing.
+  }
+  snapshot = createSnapshot();
+  listeners.forEach((listener) => listener());
+}
+
+function createSnapshot(): CartCtx {
+  const items = lines.flatMap((line) => {
+    const product = products.find((candidate) => candidate.slug === line.slug);
+    return product ? [{ product, qty: line.qty }] : [];
+  });
+
+  return {
+    lines,
+    items,
+    count: items.reduce((sum, item) => sum + item.qty, 0),
+    subtotal: items.reduce((sum, item) => sum + item.qty * item.product.price, 0),
+    add: (slug, qty = 1) =>
+      updateLines((current) => {
+        const found = current.find((line) => line.slug === slug);
+        return found
+          ? current.map((line) => (line.slug === slug ? { ...line, qty: line.qty + qty } : line))
+          : [...current, { slug, qty }];
+      }),
+    setQty: (slug, qty) =>
+      updateLines((current) =>
+        qty <= 0
+          ? current.filter((line) => line.slug !== slug)
+          : current.map((line) => (line.slug === slug ? { ...line, qty } : line)),
+      ),
+    remove: (slug) => updateLines((current) => current.filter((line) => line.slug !== slug)),
+    clear: () => updateLines([]),
+  };
+}
+
+let snapshot = createSnapshot();
+const serverSnapshot = createSnapshot();
+
+function hydrateCart() {
+  if (hydrated) return;
+  hydrated = true;
+  try {
+    const parsed: unknown = JSON.parse(localStorage.getItem(KEY) ?? "[]");
+    updateLines(Array.isArray(parsed) ? parsed.filter(isLine) : []);
+  } catch {
+    updateLines([]);
+  }
+}
+
+export function CartProvider({ children }: { children: ReactNode }) {
+  useEffect(() => {
+    hydrateCart();
+  }, []);
+  return children;
+}
+
+export function useCart(): CartCtx {
+  return useSyncExternalStore(
+    (listener) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    () => snapshot,
+    () => serverSnapshot,
+  );
 }
